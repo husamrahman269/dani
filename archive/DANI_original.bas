@@ -1,0 +1,102 @@
+5  ' DANI
+7  ' By Sean Davidson
+10 '    Introduction
+20 '
+30 CLS:KEYOFF:KEY1,"keyon"+CHR$(13):PRINT"Dynamic Artificial Non-Intelligence"
+40 PRINT:PRINTSPC(16)"DANI"
+50 FORT=1TO4:PRINT:NEXT
+60 PRINT"    Greetings human!"
+70 PRINT"        This is your MSX speaking."
+80 PRINT:PRINT"        Talk to me, and I will"
+90 PRINT"    learn from what you say, and"
+100 PRINT"    answer you."
+110 PRINT"        If you don't think I am"
+120 PRINT"    learning anything, type 'list'"
+130 PRINT"    and I will divulge my knowledge."
+140 PRINT:PRINT
+150 '
+160 '    Setup
+170 '
+180 CLEAR5000:DEFINT A-Z
+190 MA=500:DIMWD$(MA),FO$(MA,1):LW=0
+200 WD$(0)="@":MW=0
+210 INPUT"Would you like our conversation to be recorded on printer ";PR$:PR=(ASC(PR$+"N")=121ORASC(PR$+"N")=89)
+220 PRINT:PRINT:PRINT
+230 PC$="@.!?":LG$="-'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ":LC=28
+240 PRINT"Speak now, or forever hold your peace"
+300 '
+310 '    Input text line
+320 '
+330 IFPOS(9)>0THENPRINT:IFPRTHENLPRINT
+340 PRINT">";:IFPRTHENLPRINT">";
+350 PN=PN+1:IFPN=2THENAT$="@ "
+360 LINE INPUT TX$:IFTX$="list"THEN940
+370 IFTX$=""THEN1340
+380 IFPRTHENLPRINTTX$
+390 TX$=AT$+TX$:PS=0:TL=LEN(TX$)
+500 '
+510 '    Analyze text line, find words
+520 '
+530 WD$=""
+540 PS=PS+1:IFPS>TLTHENIFWD$>""THEN730ELSE1340
+550 LT$=MID$(TX$,PS,1)
+560 IS=INSTR(LG$,LT$)
+570 IFISTHENWD$=WD$+MID$(LG$,IS+26*(IS>LC),1):GOTO540
+580 IFLТ$=" "THENIFWD$=""THEN540ELSE730
+590 IFINSTR(PC$,LT$)=0THEN540
+600 IFLТ$="?"THENLT$="."
+610 IFWD$<>""THENWD$=LT$:GOTO730
+620 PS=PS-1
+700 '
+710 '    Put words in linked array
+720 '
+730 WD=-1
+740 IFWD$="i"THENWD$="I"
+750 WD=WD+1:IFWD>MWTHENWD$(WD)=WD$:MW=MW+1:GOTO770
+760 IFWD$<>WD$(WD)THEN750
+770 HI=WD/220:LO=WD-HI*220
+780 LH$=CHR$(LO+32)+CHR$(HI+32)
+790 IS=INSTR(FO$(LW,0),LH$)
+800 IFIS=0THENFO$(LW,0)=FO$(LW,0)+LH$:FO$(LW,1)=FO$(LW,1)+" ":GOTO820
+810 MID$(FO$(LW,1),INT(IS/2)+1)=CHR$(ASC(MID$(FO$(LW,1),INT(IS/2)+1))+1)
+820 LW=WD
+830 GOTO530
+900 '
+910 '    Print results table
+920 '    FROM> 360
+930 '
+940 PRINT:PRINT"Word.  Followed by (number of times):":FORWD=0TOMW
+950 PRINTWD$(WD),
+960 FORL=1TOLEN(FO$(WD,0))STEP2
+970    PR$=LEFT$(MID$(FO$(WD,0),L,2)+"  ",2)
+980    NM$=LEFT$(MID$(FO$(WD,1),INT(L/2)+1,1)+"  ",2)
+990    VL$=NM$:GOSUB1100:V2=VL
+1000   VL$=PR$:GOSUB1100
+1010   PRINTV2"(VL)";
+1020 NEXTL:PRINT:NEXTWD
+1030 PRINT:GOTO330
+1050 '
+1060 '    SUB> calc actual value from string representation
+1070 '    CALLED BY> 560,570
+1080 '    CALLED BY> 560,570
+1090 '
+1100 VL=ASC(VL$)-32+220*(ASC(RIGHT$(VL$,1))-32):RETURN
+1150 '
+1160 '    SUB> choose word path
+1170 '    CALLED BY> 1030
+1180 '
+1190 CH$="":FORR=1TOLEN(FR$):CH$=CH$+STRING$(ASC(MID$(FR$,R))+" ")-31,R):NEXTR
+1200 WN=ASC(MID$(CH$+CHR$(0),INT(RND(8)*LEN(CH$)+1)))
+1210 WC=ASC(MID$(PS$,WN*2-1)+" ")-32
+1220 RETURN
+1300 '
+1310 '    reply......
+1320 '    FROM> 370,540
+1330 '
+1340 WC=0:W=0:IFPN=1ORRND(9)>.9THENWC=RND(8)*MW
+1350 PS$=FO$(WC,0):FR$=FO$(WC,1)
+1360 GOSUB1190:IFWC=0THEN330
+1370 W=W+1
+1380 IFW=1THENWP$=CHR$(ASC(WD$(WC))+32*(WD$(WC)<>"I"))+MID$(WD$(WC),2)+" ":PRINTWP$;:IFPRTHENLPRINTWP$;:GOTO1400:ELSEGOTO1400
+1390 PRINTWP$(WC)" ";:IFPRTHENLPRINTWP$(WC)" ";
+1400 GOTO1350

@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DANI — Dynamic Artificial Non-Intelligence</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap');
+
+  :root {
+    --green: #33ff33;
+    --green-dim: #1a8c1a;
+    --green-glow: #33ff3388;
+    --amber: #ffb000;
+    --dark: #050e05;
+    --mid: #0a1a0a;
+    --scanline: rgba(0,0,0,0.18);
+    --crt-curve: 3px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: #0a0a0a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Share Tech Mono', monospace;
+    overflow: hidden;
+  }
+
+  /* ── CRT monitor shell ── */
+  .monitor {
+    width: min(860px, 98vw);
+    height: min(620px, 97vh);
+    background: #1a1a1a;
+    border-radius: 18px;
+    box-shadow:
+      0 0 0 3px #333,
+      0 0 0 6px #222,
+      0 30px 80px rgba(0,0,0,0.9),
+      0 0 120px rgba(51,255,51,0.04);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 16px 10px;
+    position: relative;
+  }
+
+  .monitor-label {
+    position: absolute;
+    bottom: 14px;
+    font-family: 'VT323', monospace;
+    font-size: 13px;
+    color: #444;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+
+  .monitor-dot {
+    position: absolute;
+    bottom: 14px;
+    right: 30px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green-dim);
+    box-shadow: 0 0 6px var(--green);
+    animation: blink-dot 3s ease-in-out infinite;
+  }
+  @keyframes blink-dot { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ── CRT screen ── */
+  .screen {
+    width: 100%;
+    flex: 1;
+    background: var(--dark);
+    border-radius: var(--crt-curve);
+    position: relative;
+    overflow: hidden;
+    border: 2px solid #0d1f0d;
+    box-shadow:
+      inset 0 0 40px rgba(0,0,0,0.8),
+      inset 0 0 2px rgba(51,255,51,0.1),
+      0 0 30px rgba(51,255,51,0.08);
+  }
+
+  /* scanlines overlay */
+  .screen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 2px,
+      var(--scanline) 2px,
+      var(--scanline) 4px
+    );
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* vignette */
+  .screen::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.6) 100%);
+    pointer-events: none;
+    z-index: 11;
+  }
+
+  /* ── Terminal inner ── */
+  .terminal {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 14px 16px 10px;
+    z-index: 5;
+  }
+
+  /* ── Header bar ── */
+  .header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--green-dim);
+    margin-bottom: 10px;
+    flex-shrink: 0;
+  }
+
+  .header-title {
+    font-family: 'VT323', monospace;
+    font-size: 28px;
+    color: var(--green);
+    text-shadow: 0 0 12px var(--green-glow);
+    letter-spacing: 4px;
+  }
+
+  .header-sub {
+    font-size: 10px;
+    color: var(--green-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .header-stats {
+    margin-left: auto;
+    font-size: 10px;
+    color: var(--green-dim);
+    text-align: right;
+    line-height: 1.6;
+  }
+  .header-stats span { color: var(--green); }
+
+  /* ── Output log ── */
+  .output {
+    flex: 1;
+    overflow-y: auto;
+    line-height: 1.55;
+    font-size: 13.5px;
+    color: var(--green);
+    padding-right: 4px;
+    scroll-behavior: smooth;
+  }
+
+  .output::-webkit-scrollbar { width: 4px; }
+  .output::-webkit-scrollbar-track { background: transparent; }
+  .output::-webkit-scrollbar-thumb { background: var(--green-dim); border-radius: 2px; }
+
+  .line { display: block; white-space: pre-wrap; word-break: break-word; }
+  .line.dani { color: var(--green); text-shadow: 0 0 6px var(--green-glow); }
+  .line.user { color: var(--amber); }
+  .line.system { color: var(--green-dim); font-size: 12px; }
+  .line.separator { color: #0d2e0d; }
+  .line.title-line { color: var(--green); font-family: 'VT323', monospace; font-size: 18px; letter-spacing: 2px; }
+
+  /* ── Word list table ── */
+  .word-table {
+    font-size: 11.5px;
+    color: var(--green-dim);
+    line-height: 1.7;
+  }
+  .word-table .wt-word { color: var(--green); min-width: 100px; display: inline-block; }
+  .word-table .wt-link { color: #44aa44; }
+  .word-table .wt-count { color: var(--amber); font-size: 10px; }
+
+  /* ── Input row ── */
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border-top: 1px solid var(--green-dim);
+    padding-top: 8px;
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+
+  .prompt-char {
+    color: var(--green);
+    font-size: 14px;
+    padding-right: 6px;
+    flex-shrink: 0;
+    text-shadow: 0 0 8px var(--green-glow);
+  }
+
+  #user-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13.5px;
+    color: var(--amber);
+    caret-color: var(--green);
+  }
+
+  .send-hint {
+    font-size: 10px;
+    color: var(--green-dim);
+    flex-shrink: 0;
+    letter-spacing: 1px;
+  }
+
+  /* ── Toolbar ── */
+  .toolbar {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+    flex-shrink: 0;
+    justify-content: flex-end;
+  }
+
+  .btn {
+    background: transparent;
+    border: 1px solid var(--green-dim);
+    color: var(--green-dim);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    padding: 3px 10px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+  .btn:hover {
+    border-color: var(--green);
+    color: var(--green);
+    background: rgba(51,255,51,0.06);
+    box-shadow: 0 0 8px var(--green-glow);
+  }
+
+  /* cursor blink on last dani line */
+  @keyframes cursor-blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  .cursor { display: inline-block; width: 8px; height: 1em; background: var(--green); vertical-align: text-bottom; animation: cursor-blink 0.8s step-end infinite; margin-left: 2px; }
+
+  /* typing animation */
+  @keyframes typeIn { from{opacity:0;transform:translateY(1px)} to{opacity:1;transform:translateY(0)} }
+  .line { animation: typeIn 0.06s ease-out forwards; }
+
+  /* glitch on dani title load */
+  @keyframes glitch {
+    0%{clip-path:inset(0 0 95% 0);transform:translate(-2px,0)}
+    10%{clip-path:inset(10% 0 80% 0);transform:translate(2px,0)}
+    20%{clip-path:inset(30% 0 60% 0);transform:translate(-1px,0)}
+    30%{clip-path:inset(60% 0 30% 0);transform:translate(1px,0)}
+    40%{clip-path:inset(0 0 0 0);transform:translate(0,0)}
+    100%{clip-path:inset(0 0 0 0);transform:translate(0,0)}
+  }
+
+  .screen-flicker {
+    animation: flicker 8s ease-in-out infinite;
+  }
+  @keyframes flicker {
+    0%,100%{opacity:1} 92%{opacity:1} 93%{opacity:0.97} 94%{opacity:1} 96%{opacity:0.98} 97%{opacity:1}
+  }
+</style>
+</head>
+<body>
+<div class="monitor">
+  <div class="screen screen-flicker">
+    <div class="terminal">
+      <div class="header">
+        <span class="header-title">DANI</span>
+        <span class="header-sub">MSX Computing · Feb 1987 · Sean Davidson</span>
+        <div class="header-stats">
+          Words: <span id="stat-words">0</span> &nbsp;|&nbsp; Links: <span id="stat-links">0</span><br>
+          Inputs: <span id="stat-inputs">0</span>
+        </div>
+      </div>
+      <div class="output" id="output"></div>
+      <div class="input-row">
+        <span class="prompt-char">&gt;</span>
+        <input type="text" id="user-input" autocomplete="off" spellcheck="false" placeholder="speak to me..." maxlength="500">
+        <span class="send-hint">[ENTER]</span>
+      </div>
+      <div class="toolbar">
+        <button class="btn" onclick="dani.showList()">LIST</button>
+        <button class="btn" onclick="dani.reset()">RESET</button>
+        <button class="btn" onclick="toggleColor()">AMBER/GREEN</button>
+      </div>
+    </div>
+  </div>
+  <div class="monitor-label">MSX COMPUTING &mdash; DANI v1.0</div>
+  <div class="monitor-dot"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  DANI — Dynamic Artificial Non-Intelligence
+//  JavaScript port of the MSX BASIC original by Sean Davidson
+//  (MSX Computing, February 1987)
+//
+//  Port follows the original algorithm exactly:
+//  - Word dictionary: WD[] string array
+//  - Link graph:      FO[][0] = packed 2-byte path strings
+//                     FO[][1] = parallel frequency byte strings
+//  - Numerical string encoding: 2-byte ASCII (byte + 32)
+//  - Weighted random selection via CH$ expansion
+// ═══════════════════════════════════════════════════════════════
+
+const DANI = (() => {
+
+  // ── Constants (match original) ──────────────────────────────
+  const MA = 500;               // max words
+  const PC = "@.!?";            // allowed punctuation
+  // LG$ split: positions 1-27 = punctuation+lowercase, 29+ = uppercase
+  // We handle case-folding directly in JS instead
+  const LOWERCASE = "-'abcdefghijklmnopqrstuvwxyz";
+  const UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const LG = LOWERCASE + UPPERCASE;
+  const LC = LOWERCASE.length; // 28 — split point between lower and upper in LG
+
+  // ── State ───────────────────────────────────────────────────
+  let WD = [];      // word dictionary: WD[x] = word string
+  let FO = [];      // link graph: FO[x][0]=paths string, FO[x][1]=freq string
+  let MW = 0;       // max words known (current count - 1)
+  let LW = 0;       // last word index (for linking)
+  let PN = 0;       // pass number
+  let AT = "";      // "@" prefix added from pass 2+
+
+  // ── Numerical string encode/decode (lines 770-780, 1100) ────
+  // Encodes word index WD into a 2-byte string (each byte value+32)
+  function encodeIndex(wd) {
+    const hi = Math.floor(wd / 220);
+    const lo = wd - hi * 220;
+    return String.fromCharCode(lo + 32) + String.fromCharCode(hi + 32);
+  }
+
+  // Decodes 2-byte string back to word index (GOSUB 1100)
+  function decodeIndex(s) {
+    if (!s || s.length < 2) return 0;
+    return (s.charCodeAt(0) - 32) + 220 * (s.charCodeAt(1) - 32);
+  }
+
+  // ── Initialise (lines 180-240) ───────────────────────────────
+  function init() {
+    WD = new Array(MA).fill("");
+    FO = Array.from({length: MA}, () => ["", ""]);
+    WD[0] = "@";
+    MW = 0;
+    LW = 0;
+    PN = 0;
+    AT = "";
+  }
+
+  // ── Tokenise text line (lines 500-630) ──────────────────────
+  // Yields successive tokens (words and punctuation marks)
+  function* tokenise(tx) {
+    let ps = 0;
+    let wd = "";
+    const tl = tx.length;
+
+    while (true) {
+      if (ps >= tl) {
+        if (wd !== "") { yield wd; }
+        return;
+      }
+
+      const lt = tx[ps];
+      ps++;
+
+      const isInLG = LG.indexOf(lt);
+
+      if (isInLG !== -1) {
+        // Legal character — fold to lowercase (line 570: IS+26*(IS>LC))
+        const ch = isInLG < LC ? lt : lt.toLowerCase();
+        wd += ch;
+        continue;
+      }
+
+      if (lt === " ") {
+        if (wd === "") continue;        // skip leading spaces
+        yield wd;
+        wd = "";
+        continue;
+      }
+
+      if (PC.indexOf(lt) === -1) continue;  // not allowed punct → skip
+
+      // It's allowed punctuation
+      const norm = (lt === "?") ? "." : lt;  // line 600: ? → .
+
+      if (wd !== "") {
+        // Word was being built — yield it, then schedule punctuation
+        // (line 610: WD$=LT$:GOTO730 — the punct becomes the next token)
+        yield wd;
+        wd = norm;          // save punct as next wd to yield
+        // We handle this by continuing; next iteration wd=norm, lt will be next char
+        // Actually in original, punct itself becomes the word. Let's yield it now:
+        yield norm;
+        wd = "";
+        continue;
+      }
+
+      // No word being built — punct becomes its own word (line 620: PS=PS-1 trick)
+      yield norm;
+    }
+  }
+
+  // ── Add word to dictionary & record link (lines 730-830) ────
+  function learnWord(wdStr) {
+    // Normalise (line 740)
+    if (wdStr === "i") wdStr = "I";
+
+    // Find or add in dictionary (lines 750-760)
+    let wd = -1;
+    for (let i = 0; i <= MW; i++) {
+      if (WD[i] === wdStr) { wd = i; break; }
+    }
+    if (wd === -1) {
+      // New word
+      wd = MW + 1;
+      if (wd >= MA) return; // overflow guard
+      WD[wd] = wdStr;
+      MW = wd;
+    }
+
+    // Encode current word index (lines 770-780)
+    const lh = encodeIndex(wd);
+
+    // Find link from LW → wd in FO[LW][0] (line 790)
+    const paths = FO[LW][0];
+    const pos = paths.indexOf(lh);  // IS in original
+
+    if (pos === -1) {
+      // New link (line 800)
+      FO[LW][0] += lh;
+      FO[LW][1] += " ";  // space = chr(32) → frequency 0 initially (decoded as 32-31=1 in CH$ logic)
+    } else {
+      // Existing link — increment frequency byte (line 810)
+      const freqPos = Math.floor(pos / 2);
+      const freq = FO[LW][1].charCodeAt(freqPos);
+      FO[LW][1] = FO[LW][1].substring(0, freqPos) +
+                  String.fromCharCode(freq + 1) +
+                  FO[LW][1].substring(freqPos + 1);
+    }
+
+    LW = wd;  // line 820: last word becomes current word
+  }
+
+  // ── Process one input line (learn phase) ────────────────────
+  function learn(txRaw) {
+    PN++;
+    if (PN === 2) AT = "@ ";  // line 350
+
+    const tx = AT + txRaw;
+    LW = 0; // reset last word to "@" (index 0) for each line
+
+    for (const token of tokenise(tx)) {
+      learnWord(token);
+    }
+  }
+
+  // ── Weighted word selection subroutine (lines 1190-1220) ────
+  // fr$ = frequency string, ps$ = paths string
+  // Returns next word index WC
+  function chooseNext(fr, ps) {
+    if (!fr || fr.length === 0) return 0;
+
+    // Build weighted selection string CH$ (line 1190)
+    // Each path index R appears (frequency_byte - 31) times
+    let ch = "";
+    for (let r = 0; r < fr.length; r++) {
+      const freq = fr.charCodeAt(r);
+      const weight = Math.max(1, freq - 31);  // line: ASC(MID$(FR$,R))+" ")-31 → +32 then -31 = +1 min
+      // Append the byte R, weight times
+      ch += String.fromCharCode(r).repeat(weight);
+    }
+
+    if (ch.length === 0) return 0;
+
+    // Random pick from CH$ (line 1200)
+    const wn = ch.charCodeAt(Math.floor(Math.random() * ch.length));
+
+    // Decode path entry WN from PS$ (line 1210)
+    // Original only decodes low byte: ASC(MID$(PS$,WN*2-1)+" ")-32
+    // We use full 2-byte decode for correctness
+    const bytePos = wn * 2;
+    if (bytePos + 2 > ps.length) return 0;
+    const pathEntry = ps.substring(bytePos, bytePos + 2);
+    return decodeIndex(pathEntry);
+  }
+
+  // ── Generate reply (lines 1340-1400) ────────────────────────
+  function reply() {
+    // Line 1340: start from "@" or random word
+    let wc = 0;
+    if (PN === 1 || Math.random() > 0.9) {
+      wc = Math.floor(Math.random() * (MW + 1));
+    }
+
+    const words = [];
+    let safety = 0;
+
+    while (safety++ < 80) {
+      const ps = FO[wc][0];  // paths string
+      const fr = FO[wc][1];  // freq string
+
+      wc = chooseNext(fr, ps);
+
+      if (wc === 0) break;  // reached "@" or dead end → end sentence
+
+      let word = WD[wc] || "";
+      if (!word) break;
+
+      if (words.length === 0 && word !== "I") {
+        // Capitalise first word (line 1380)
+        word = word[0].toUpperCase() + word.slice(1);
+      }
+
+      words.push(word);
+    }
+
+    return words.join(" ");
+  }
+
+  // ── Public API ───────────────────────────────────────────────
+  return {
+    init,
+    learn,
+    reply,
+    getWordCount: () => MW,
+    getLinkCount: () => {
+      let n = 0;
+      for (let i = 0; i <= MW; i++) n += FO[i][0].length / 2;
+      return n;
+    },
+    getWordList: () => {
+      const rows = [];
+      for (let i = 0; i <= MW; i++) {
+        if (!WD[i]) continue;
+        const links = [];
+        const ps = FO[i][0];
+        const fr = FO[i][1];
+        for (let l = 0; l + 2 <= ps.length; l += 2) {
+          const idx = decodeIndex(ps.substring(l, l + 2));
+          const freqByte = fr.charCodeAt(l / 2) || 32;
+          const count = freqByte - 31;
+          links.push({ word: WD[idx] || "?", count });
+        }
+        rows.push({ word: WD[i], links });
+      }
+      return rows;
+    }
+  };
+})();
+
+// ═══════════════════════════════════════════════════════════════
+//  UI Controller
+// ═══════════════════════════════════════════════════════════════
+
+const output = document.getElementById("output");
+const input  = document.getElementById("user-input");
+
+let isAmber = false;
+
+function toggleColor() {
+  isAmber = !isAmber;
+  document.documentElement.style.setProperty('--green', isAmber ? '#ffb000' : '#33ff33');
+  document.documentElement.style.setProperty('--green-dim', isAmber ? '#7a5500' : '#1a8c1a');
+  document.documentElement.style.setProperty('--green-glow', isAmber ? '#ffb00077' : '#33ff3388');
+  document.documentElement.style.setProperty('--amber', isAmber ? '#ffffff' : '#ffb000');
+}
+
+let lineQueue = [];
+let printing = false;
+
+function printLine(text, cls = "dani", delay = 0) {
+  return new Promise(resolve => {
+    lineQueue.push({ text, cls, delay, resolve });
+    drainQueue();
+  });
+}
+
+function drainQueue() {
+  if (printing || lineQueue.length === 0) return;
+  printing = true;
+  const { text, cls, delay, resolve } = lineQueue.shift();
+
+  setTimeout(() => {
+    const el = document.createElement("span");
+    el.className = `line ${cls}`;
+    el.textContent = text;
+    output.appendChild(el);
+    output.scrollTop = output.scrollHeight;
+    printing = false;
+    resolve();
+    drainQueue();
+  }, delay);
+}
+
+function blank(delay = 0) { return printLine("", "line", delay); }
+
+async function typeReply(text) {
+  // Split reply into words and print them with a slight delay for drama
+  if (!text) {
+    await printLine("...", "system", 30);
+    return;
+  }
+  await printLine("DANI: " + text, "dani", 60);
+}
+
+function updateStats() {
+  document.getElementById("stat-words").textContent = DANI.getWordCount();
+  document.getElementById("stat-links").textContent = Math.round(DANI.getLinkCount());
+  document.getElementById("stat-inputs").textContent = parseInt(document.getElementById("stat-inputs").textContent || 0) + 1;
+}
+
+// ── Boot sequence ────────────────────────────────────────────
+async function boot() {
+  DANI.init();
+  document.getElementById("stat-inputs").textContent = "0";
+
+  await printLine("", "system", 100);
+  await printLine("  ██████╗  █████╗ ███╗   ██╗██╗", "title-line", 80);
+  await printLine("  ██╔══██╗██╔══██╗████╗  ██║██║", "title-line", 40);
+  await printLine("  ██║  ██║███████║██╔██╗ ██║██║", "title-line", 40);
+  await printLine("  ██║  ██║██╔══██║██║╚██╗██║██║", "title-line", 40);
+  await printLine("  ██████╔╝██║  ██║██║ ╚████║██║", "title-line", 40);
+  await printLine("  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝", "title-line", 40);
+  await blank(40);
+  await printLine("  Dynamic Artificial Non-Intelligence", "system", 60);
+  await printLine("  By Sean Davidson — MSX Computing, Feb 1987", "system", 40);
+  await printLine("  JavaScript port — faithful to the original BASIC", "system", 40);
+  await blank(100);
+  await printLine("  Greetings, human.", "dani", 200);
+  await printLine("  This is your MSX speaking.", "dani", 80);
+  await blank(60);
+  await printLine("  Talk to me. I will learn from what you say,", "dani", 80);
+  await printLine("  and answer you back.", "dani", 60);
+  await blank(60);
+  await printLine("  Commands:  list  →  show word graph", "system", 80);
+  await printLine("             reset →  clear all learning", "system", 40);
+  await blank(120);
+  await printLine("  Speak now, or forever hold your peace.", "dani", 100);
+  await blank(40);
+
+  input.focus();
+}
+
+// ── Main input handler ───────────────────────────────────────
+const dani = {
+  async handleInput(raw) {
+    const tx = raw.trim();
+    if (!tx) return;
+
+    // Echo user
+    await printLine("YOU:  " + tx, "user", 0);
+
+    if (tx.toLowerCase() === "list") {
+      await this.showList();
+      return;
+    }
+
+    if (tx.toLowerCase() === "reset") {
+      await this.reset();
+      return;
+    }
+
+    // Learn from input
+    DANI.learn(tx);
+
+    // Generate and display reply
+    const replyText = DANI.reply();
+    await typeReply(replyText);
+    await blank(20);
+
+    updateStats();
+  },
+
+  async showList() {
+    await blank(20);
+    await printLine("── WORD GRAPH ─────────────────────────────", "system", 0);
+    const rows = DANI.getWordList();
+    if (rows.length === 0) {
+      await printLine("  (no words learned yet)", "system", 40);
+    }
+    for (const row of rows) {
+      const links = row.links
+        .map(l => `${l.word}(${l.count})`)
+        .join("  ");
+      const el = document.createElement("span");
+      el.className = "line word-table";
+      el.innerHTML = `  <span class="wt-word">${row.word.padEnd(14)}</span>→  <span class="wt-link">${links || "(terminal)"}</span>`;
+      output.appendChild(el);
+      output.scrollTop = output.scrollHeight;
+      await new Promise(r => setTimeout(r, 12));
+    }
+    await printLine("── END ────────────────────────────────────", "system", 40);
+    await blank(20);
+  },
+
+  async reset() {
+    await blank(20);
+    await printLine("  Clearing all learned data...", "system", 60);
+    DANI.init();
+    document.getElementById("stat-words").textContent = "0";
+    document.getElementById("stat-links").textContent = "0";
+    document.getElementById("stat-inputs").textContent = "0";
+    await printLine("  Done. I know nothing again.", "dani", 200);
+    await blank(40);
+  }
+};
+
+// ── Keyboard handler ─────────────────────────────────────────
+input.addEventListener("keydown", async e => {
+  if (e.key === "Enter") {
+    const val = input.value;
+    input.value = "";
+    await dani.handleInput(val);
+    input.focus();
+  }
+});
+
+// ── Start ────────────────────────────────────────────────────
+boot();
+</script>
+</body>
+</html>
