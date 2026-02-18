@@ -68,7 +68,7 @@ open index.html        # macOS
 # or: just double-click index.html in your file manager
 ```
 
-Or visit the **[live demo](https://your-username.github.io/dani)**.
+Or visit the **[live demo](https://husamrahman269.github.io/dani)**.
 
 ---
 
