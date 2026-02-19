@@ -5,7 +5,7 @@
 
 A faithful JavaScript port of **DANI**, an MSX BASIC conversational AI program by **Sean Davidson**, originally published in *MSX Computing* magazine, February 1987.
 
-**[▶ Try it live](https://your-username.github.io/dani)** &nbsp;|&nbsp; [Read the original article](docs/)
+**[▶ Try it live](https://husamrahman269.github.io/dani)** &nbsp;|&nbsp; [Read the original article](docs/)
 
 ---
 
