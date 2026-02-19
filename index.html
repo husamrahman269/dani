@@ -32,8 +32,8 @@
 
   /* ── CRT monitor shell ── */
   .monitor {
-    width: min(860px, 98vw);
-    height: min(620px, 97vh);
+    width: min(1280px, 99vw);
+    height: min(680px, 97vh);
     background: #1a1a1a;
     border-radius: 18px;
     box-shadow:
@@ -110,6 +110,120 @@
     pointer-events: none;
     z-index: 11;
   }
+
+  /* ── Split layout ── */
+  .screen-wrap {
+    width: 100%;
+    flex: 1;
+    display: flex;
+    gap: 10px;
+    overflow: hidden;
+  }
+
+  .screen { flex: 1 1 0; min-width: 0; }
+
+  /* ── Explain panel ── */
+  .explain-panel {
+    width: 320px;
+    flex-shrink: 0;
+    background: var(--dark);
+    border-radius: var(--crt-curve);
+    border: 2px solid #0d2a0d;
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.8), 0 0 20px rgba(51,255,51,0.04);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+  .explain-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, var(--scanline) 2px, var(--scanline) 4px);
+    pointer-events: none;
+    z-index: 10;
+  }
+  .explain-inner {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 12px 14px 10px;
+  }
+  .explain-header {
+    font-size: 10px;
+    color: var(--green-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--green-dim);
+    padding-bottom: 7px;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .explain-header .eh-title { color: var(--green); font-size: 12px; }
+  .explain-toggle {
+    background: none;
+    border: 1px solid var(--green-dim);
+    color: var(--green-dim);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    padding: 2px 6px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.15s;
+  }
+  .explain-toggle:hover, .explain-toggle.active {
+    border-color: var(--green);
+    color: var(--green);
+    box-shadow: 0 0 6px var(--green-glow);
+    background: rgba(51,255,51,0.08);
+  }
+  .explain-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .explain-body::-webkit-scrollbar { width: 3px; }
+  .explain-body::-webkit-scrollbar-thumb { background: var(--green-dim); }
+  .step-card {
+    margin-bottom: 10px;
+    border-left: 2px solid var(--green-dim);
+    padding-left: 8px;
+    animation: stepIn 0.25s ease;
+  }
+  @keyframes stepIn { from { opacity:0; transform:translateX(-4px); } to { opacity:1; transform:translateX(0); } }
+  .step-card.winner { border-left-color: var(--green); }
+  .step-from { color: var(--green-dim); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 3px; }
+  .step-from span { color: var(--amber); font-size: 12px; text-transform: none; letter-spacing: 0; }
+  .step-chosen { color: var(--green); font-size: 16px; font-family: 'VT323', monospace; letter-spacing: 2px; text-shadow: 0 0 8px var(--green-glow); margin-bottom: 4px; }
+  .candidates { display: flex; flex-direction: column; gap: 2px; }
+  .candidate { display: flex; align-items: center; gap: 5px; font-size: 10px; opacity: 0.6; }
+  .candidate.winner { opacity: 1; color: var(--green); }
+  .candidate.winner .cbar { background: var(--green); box-shadow: 0 0 4px var(--green-glow); }
+  .cword { min-width: 72px; color: var(--amber); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .candidate.winner .cword { color: var(--green); }
+  .cbar-wrap { flex: 1; height: 5px; background: rgba(51,255,51,0.08); border-radius: 1px; overflow: hidden; }
+  .cbar { height: 100%; background: var(--green-dim); border-radius: 1px; }
+  .cweight { color: var(--green-dim); font-size: 9px; min-width: 20px; text-align: right; }
+  .roll-line { font-size: 9px; color: var(--green-dim); margin-top: 4px; letter-spacing: 1px; }
+  .roll-line em { color: var(--amber); font-style: normal; }
+  .explain-idle { color: var(--green-dim); font-size: 10px; line-height: 1.8; letter-spacing: 1px; text-align: center; padding: 20px 0; }
+  .explain-idle .big { font-family: 'VT323', monospace; font-size: 24px; color: var(--green); display: block; margin-bottom: 8px; }
+  .explain-sentence {
+    font-size: 10px;
+    color: var(--green-dim);
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(51,255,51,0.15);
+  }
+  .explain-sentence em { color: var(--green); font-style: normal; font-family: 'VT323', monospace; font-size: 13px; letter-spacing: 2px; }
 
   /* ── Terminal inner ── */
   .terminal {
@@ -281,26 +395,46 @@
 </head>
 <body>
 <div class="monitor">
-  <div class="screen screen-flicker">
-    <div class="terminal">
-      <div class="header">
-        <span class="header-title">DANI</span>
-        <span class="header-sub">MSX Computing · Feb 1987 · Sean Davidson</span>
-        <div class="header-stats">
-          Words: <span id="stat-words">0</span> &nbsp;|&nbsp; Links: <span id="stat-links">0</span><br>
-          Inputs: <span id="stat-inputs">0</span>
+  <div class="screen-wrap">
+    <div class="screen screen-flicker">
+      <div class="terminal">
+        <div class="header">
+          <span class="header-title">DANI</span>
+          <span class="header-sub">MSX Computing · Feb 1987 · Sean Davidson</span>
+          <div class="header-stats">
+            Words: <span id="stat-words">0</span> &nbsp;|&nbsp; Links: <span id="stat-links">0</span><br>
+            Inputs: <span id="stat-inputs">0</span>
+          </div>
+        </div>
+        <div class="output" id="output"></div>
+        <div class="input-row">
+          <span class="prompt-char">&gt;</span>
+          <input type="text" id="user-input" autocomplete="off" spellcheck="false" placeholder="speak to me..." maxlength="500">
+          <span class="send-hint">[ENTER]</span>
+        </div>
+        <div class="toolbar">
+          <button class="btn" onclick="dani.showList()">LIST</button>
+          <button class="btn" onclick="dani.reset()">RESET</button>
+          <button class="btn" onclick="toggleColor()">AMBER/GREEN</button>
         </div>
       </div>
-      <div class="output" id="output"></div>
-      <div class="input-row">
-        <span class="prompt-char">&gt;</span>
-        <input type="text" id="user-input" autocomplete="off" spellcheck="false" placeholder="speak to me..." maxlength="500">
-        <span class="send-hint">[ENTER]</span>
-      </div>
-      <div class="toolbar">
-        <button class="btn" onclick="dani.showList()">LIST</button>
-        <button class="btn" onclick="dani.reset()">RESET</button>
-        <button class="btn" onclick="toggleColor()">AMBER/GREEN</button>
+    </div>
+
+    <!-- Explanation panel -->
+    <div class="explain-panel">
+      <div class="explain-inner">
+        <div class="explain-header">
+          <span class="eh-title">DECISION LOG</span>
+          <button class="explain-toggle active" id="explain-btn" onclick="toggleExplain()">ON</button>
+        </div>
+        <div class="explain-body" id="explain-body">
+          <div class="explain-idle">
+            <span class="big">&#x25B6;</span>
+            Talk to DANI.<br>
+            Each word choice<br>
+            will be shown here.
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -477,35 +611,56 @@ const DANI = (() => {
 
   // ── Weighted word selection subroutine (lines 1190-1220) ────
   // fr$ = frequency string, ps$ = paths string
-  // Returns next word index WC
-  function chooseNext(fr, ps) {
-    if (!fr || fr.length === 0) return 0;
+  // Returns { wc, trace } where trace has candidates and roll info for the explain panel
+  function chooseNext(fr, ps, fromWord) {
+    if (!fr || fr.length === 0) return { wc: 0, trace: null };
 
     // Build weighted selection string CH$ (line 1190)
     // Each path index R appears (frequency_byte - 31) times
     let ch = "";
+    const candidates = []; // [{wordIdx, word, weight}]
+    let totalWeight = 0;
+
     for (let r = 0; r < fr.length; r++) {
       const freq = fr.charCodeAt(r);
-      const weight = Math.max(1, freq - 31);  // line: ASC(MID$(FR$,R))+" ")-31 → +32 then -31 = +1 min
-      // Append the byte R, weight times
+      const weight = Math.max(1, freq - 31);
       ch += String.fromCharCode(r).repeat(weight);
+      totalWeight += weight;
+
+      // Decode word for this path entry
+      const bytePos = r * 2;
+      if (bytePos + 2 <= ps.length) {
+        const wordIdx = decodeIndex(ps.substring(bytePos, bytePos + 2));
+        candidates.push({ pathR: r, wordIdx, word: WD[wordIdx] || "@", weight });
+      }
     }
 
-    if (ch.length === 0) return 0;
+    if (ch.length === 0) return { wc: 0, trace: null };
 
     // Random pick from CH$ (line 1200)
-    const wn = ch.charCodeAt(Math.floor(Math.random() * ch.length));
+    const roll = Math.floor(Math.random() * ch.length);
+    const wn = ch.charCodeAt(roll);
 
     // Decode path entry WN from PS$ (line 1210)
-    // Original only decodes low byte: ASC(MID$(PS$,WN*2-1)+" ")-32
-    // We use full 2-byte decode for correctness
     const bytePos = wn * 2;
-    if (bytePos + 2 > ps.length) return 0;
+    if (bytePos + 2 > ps.length) return { wc: 0, trace: null };
     const pathEntry = ps.substring(bytePos, bytePos + 2);
-    return decodeIndex(pathEntry);
+    const wc = decodeIndex(pathEntry);
+
+    const trace = {
+      from: fromWord || "@",
+      chosen: WD[wc] || "@",
+      candidates: candidates.sort((a,b) => b.weight - a.weight).slice(0, 8), // top 8
+      roll,
+      totalWeight,
+      winnerIdx: wc
+    };
+
+    return { wc, trace };
   }
 
   // ── Generate reply (lines 1340-1400) ────────────────────────
+  // Returns { text, traces } — traces is array of decision steps for explain panel
   function reply() {
     // Line 1340: start from "@" or random word
     let wc = 0;
@@ -514,13 +669,17 @@ const DANI = (() => {
     }
 
     const words = [];
+    const traces = [];
     let safety = 0;
 
     while (safety++ < 80) {
+      const fromWord = WD[wc] || "@";
       const ps = FO[wc][0];  // paths string
       const fr = FO[wc][1];  // freq string
 
-      wc = chooseNext(fr, ps);
+      const result = chooseNext(fr, ps, fromWord);
+      wc = result.wc;
+      if (result.trace) traces.push(result.trace);
 
       if (wc === 0) break;  // reached "@" or dead end → end sentence
 
@@ -535,14 +694,14 @@ const DANI = (() => {
       words.push(word);
     }
 
-    return words.join(" ");
+    return { text: words.join(" "), traces };
   }
 
   // ── Public API ───────────────────────────────────────────────
   return {
     init,
     learn,
-    reply,
+    reply,   // returns { text, traces }
     getWordCount: () => MW,
     getLinkCount: () => {
       let n = 0;
@@ -615,13 +774,89 @@ function drainQueue() {
 
 function blank(delay = 0) { return printLine("", "line", delay); }
 
-async function typeReply(text) {
-  // Split reply into words and print them with a slight delay for drama
+async function typeReply(text, traces) {
   if (!text) {
     await printLine("...", "system", 30);
     return;
   }
   await printLine("DANI: " + text, "dani", 60);
+  if (traces) renderExplain(text, traces);
+}
+
+// ── Explain panel ──────────────────────────────────────────
+let explainEnabled = true;
+
+function toggleExplain() {
+  explainEnabled = !explainEnabled;
+  const btn = document.getElementById('explain-btn');
+  btn.textContent = explainEnabled ? 'ON' : 'OFF';
+  btn.classList.toggle('active', explainEnabled);
+  if (!explainEnabled) {
+    document.getElementById('explain-body').innerHTML =
+      '<div class="explain-idle"><span class="big">&#x23F8;</span>Paused</div>';
+  }
+}
+
+function renderExplain(sentence, traces) {
+  if (!explainEnabled) return;
+  const body = document.getElementById('explain-body');
+  body.innerHTML = '';
+
+  // Sentence header
+  const sh = document.createElement('div');
+  sh.className = 'explain-sentence';
+  sh.innerHTML = 'OUTPUT: <em>' + sentence + '</em>';
+  body.appendChild(sh);
+
+  // One card per word-choice step
+  traces.forEach((t, i) => {
+    const card = document.createElement('div');
+    card.className = 'step-card winner';
+
+    // From → chosen
+    const fromDiv = document.createElement('div');
+    fromDiv.className = 'step-from';
+    fromDiv.innerHTML = 'FROM <span>' + t.from + '</span>';
+    card.appendChild(fromDiv);
+
+    const chosenDiv = document.createElement('div');
+    chosenDiv.className = 'step-chosen';
+    chosenDiv.textContent = '→ ' + t.chosen;
+    card.appendChild(chosenDiv);
+
+    // Candidate bars
+    if (t.candidates.length > 0) {
+      const maxW = Math.max(...t.candidates.map(c => c.weight));
+      const candDiv = document.createElement('div');
+      candDiv.className = 'candidates';
+
+      t.candidates.forEach(c => {
+        const isWinner = c.wordIdx === t.winnerIdx;
+        const row = document.createElement('div');
+        row.className = 'candidate' + (isWinner ? ' winner' : '');
+
+        const pct = Math.round((c.weight / maxW) * 100);
+        const pctOfTotal = Math.round((c.weight / t.totalWeight) * 100);
+
+        row.innerHTML =
+          '<span class="cword">' + (c.word || '@') + '</span>' +
+          '<span class="cbar-wrap"><span class="cbar" style="width:' + pct + '%"></span></span>' +
+          '<span class="cweight">' + pctOfTotal + '%</span>';
+        candDiv.appendChild(row);
+      });
+      card.appendChild(candDiv);
+    }
+
+    // Roll info
+    const rollDiv = document.createElement('div');
+    rollDiv.className = 'roll-line';
+    rollDiv.innerHTML = 'roll <em>' + t.roll + '</em> / <em>' + t.totalWeight + '</em> slots';
+    card.appendChild(rollDiv);
+
+    body.appendChild(card);
+  });
+
+  body.scrollTop = 0;
 }
 
 function updateStats() {
@@ -685,8 +920,8 @@ const dani = {
     DANI.learn(tx);
 
     // Generate and display reply
-    const replyText = DANI.reply();
-    await typeReply(replyText);
+    const { text: replyText, traces } = DANI.reply();
+    await typeReply(replyText, traces);
     await blank(20);
 
     updateStats();
